@@ -1,6 +1,6 @@
 # Chevron — Compare With Branch, IntelliJ-style
 
-**IntelliJ's "Compare With Branch", faithfully — including taking changes across.**
+**Diff against any branch, tag or commit, and take changes across hunk by hunk.**
 No account, no AI, no Pro tier, no telemetry.
 
 Pick a branch, tag or commit. Chevron shows every file you've changed since you diverged from it,

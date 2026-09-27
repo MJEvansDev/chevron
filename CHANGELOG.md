@@ -4,6 +4,14 @@ All notable changes to Chevron are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 1.0.1
+
+### Changed
+
+- Reworded the extension description ("Compare With Branch for VS Code, IntelliJ-style") and the
+  README's opening line, so it's clear Chevron is an independent extension, not a JetBrains
+  product. No functional changes.
+
 ## 1.0.0
 
 Initial public release.

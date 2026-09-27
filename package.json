@@ -1,8 +1,8 @@
 {
   "name": "chevron",
   "displayName": "Chevron — Compare With Branch, IntelliJ-style",
-  "description": "IntelliJ's Compare With Branch for VS Code: diff your working tree against any branch, tag or commit, and take changes across hunk by hunk. No account, no telemetry.",
-  "version": "1.0.0",
+  "description": "Compare With Branch for VS Code, IntelliJ-style: diff your working tree against any branch, tag or commit, and take changes across hunk by hunk. No account, no telemetry.",
+  "version": "1.0.1",
   "publisher": "MJEvansDev",
   "license": "MIT",
   "icon": "resources/icon.png",
