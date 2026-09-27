@@ -100,7 +100,7 @@ jobs:
           pnpm run vsix
           test -f "$VSIX"
           unzip -l "$VSIX"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: chevron-release-vsix
           path: ${{ needs.preflight.outputs.vsix }}
