@@ -1,0 +1,46 @@
+# Everything esbuild inlines into dist/extension.js — no runtime node_modules needed.
+node_modules/**
+
+# Sources, tests and tooling
+.vscode/**
+.vscode-test/**
+.vscode-test.mjs
+out/**
+src/**
+test/**
+scripts/**
+.gitignore
+.eslintignore
+eslint.config.mjs
+esbuild.js
+tsconfig.json
+tsconfig.test.json
+vitest.config.mts
+pnpm-lock.yaml
+pnpm-workspace.yaml
+**/*.map
+**/.eslintrc*
+**/*.ts
+
+# Repo-only metadata and docs
+.claude/**
+.github/**
+docs/**
+**/*.md
+!README.md
+!CHANGELOG.md
+!LICENSE
+
+# Previous builds (otherwise the last .vsix gets embedded in the next one)
+*.vsix
+
+# Icon sources — the packaged icon is resources/icon.png; resources/*.svg stays
+# (the activity-bar icon is an SVG referenced from contributes.viewsContainers).
+resources/**/*.psd
+resources/**/*.xcf
+resources/**/*.ai
+resources/**/*.sketch
+resources/**/*.fig
+resources/**/*-source.*
+resources/**/*.src.*
+resources/icon.svg

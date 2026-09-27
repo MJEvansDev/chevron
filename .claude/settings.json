@@ -1,0 +1,20 @@
+{
+  "enabledPlugins": {
+    "code-review@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/maintenance-status.mjs\" 2>/dev/null || true",
+            "timeout": 20,
+            "statusMessage": "Checking Chevron maintenance status"
+          }
+        ]
+      }
+    ]
+  }
+}

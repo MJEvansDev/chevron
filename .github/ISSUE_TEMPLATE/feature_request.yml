@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest something Chevron should do.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Chevron deliberately does one thing: IntelliJ's *Compare With Branch*, including taking
+        changes across. Before asking, please check the list of
+        [things Chevron will never build](https://github.com/MJEvansDev/chevron/blob/main/CONTRIBUTING.md#what-chevron-will-never-build)
+        — PR review, AI, accounts, network access and the like. Requests for those will be closed with a link to that list; other extensions already
+        do them well.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation and the problem, rather than the solution. "When I compare against a release tag, I can't…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: intellij
+    attributes:
+      label: How does IntelliJ / a JetBrains IDE handle this?
+      description: If the request is about matching JetBrains behaviour, describe (or screenshot) what it does there.
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like Chevron to do?
+      description: Optional — a sketch of the behaviour you have in mind.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: I've read the "never build" list and this isn't on it
+          required: true

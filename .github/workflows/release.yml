@@ -1,0 +1,176 @@
+name: Release
+
+# The only way Chevron gets published. Run from Actions → Release → Run workflow on `main`:
+#   version: must equal package.json's version (bump it in a PR first; see CONTRIBUTING.md →
+#            Release process). MAJOR.MINOR.PATCH only; the Marketplace rejects pre-release
+#            suffixes.
+#   publish: unticked (default) is a dry run. It runs the full Ubuntu/Windows/macOS test matrix
+#            and builds the .vsix as an artifact, but tags and publishes nothing. Use it before a
+#            release, and to get the .vsix for manual QA. Ticked means that after the
+#            same checks pass, it creates tag vX.Y.Z and the GitHub Release, and publishes the same
+#            .vsix to the VS Code Marketplace and Open VSX. The `marketplace` environment's
+#            required reviewer approves that step.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (must match package.json), e.g. 1.0.0
+        required: true
+        type: string
+      publish:
+        description: Publish (tag, GitHub Release, Marketplace, Open VSX). Leave unticked for a dry run.
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      vsix: ${{ steps.check.outputs.vsix }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check version, branch and tag
+        id: check
+        env:
+          VERSION: ${{ inputs.version }}
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          pkg="$(node -p "require('./package.json').version")"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$VERSION' is not MAJOR.MINOR.PATCH. The Marketplace does not accept pre-release suffixes."
+            exit 1
+          fi
+          if [[ "$VERSION" != "$pkg" ]]; then
+            echo "::error::Input version $VERSION does not match package.json ($pkg). Bump package.json and CHANGELOG.md in a PR first."
+            exit 1
+          fi
+          if [[ "$PUBLISH" == "true" && "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Publishing is only allowed from main (this run is on $GITHUB_REF). Use a dry run on other branches."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::Tag v$VERSION already exists. Registry versions can't be reused; bump the version."
+            exit 1
+          fi
+          if ! grep -Eq "^## \[?$VERSION\]?" CHANGELOG.md; then
+            echo "::warning::CHANGELOG.md has no '## $VERSION' section; the GitHub Release will use generated notes."
+          fi
+          echo "vsix=chevron-$VERSION.vsix" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Release $VERSION: $([[ "$PUBLISH" == "true" ]] && echo "publishing" || echo "dry run")"
+            echo "Commit \`$GITHUB_SHA\` on \`$GITHUB_REF_NAME\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # The full cross-platform suite. It only runs here, not on every push.
+  test:
+    needs: preflight
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    uses: ./.github/workflows/test.yml
+    with:
+      os: ${{ matrix.os }}
+
+  # Package exactly once; the QA artifact and every registry get this same file.
+  package:
+    needs: [preflight, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Package
+        env:
+          VSIX: ${{ needs.preflight.outputs.vsix }}
+        run: |
+          pnpm run vsix
+          test -f "$VSIX"
+          unzip -l "$VSIX"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chevron-release-vsix
+          path: ${{ needs.preflight.outputs.vsix }}
+          if-no-files-found: error
+          retention-days: 90
+
+  publish:
+    needs: [preflight, package]
+    if: inputs.publish
+    runs-on: ubuntu-latest
+    # The Entra federated credential is bound to this environment's OIDC subject
+    # (repo:MJEvansDev/chevron:environment:marketplace). Its required reviewer gates every publish.
+    environment: marketplace
+    permissions:
+      contents: write # create the tag and the GitHub Release
+      id-token: write # GitHub OIDC -> Microsoft Entra ID for Marketplace publishing
+    env:
+      VERSION: ${{ inputs.version }}
+      VSIX: ${{ needs.preflight.outputs.vsix }}
+    steps:
+      - uses: actions/checkout@v7 # for CHANGELOG.md (release notes)
+      - uses: actions/download-artifact@v4
+        with:
+          name: chevron-release-vsix
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      # Marketplace auth is Microsoft Entra ID via GitHub OIDC (`vsce --azure-credential`), with a
+      # user-assigned managed identity and no PAT. Set the `marketplace` environment's variables
+      # AZURE_CLIENT_ID and AZURE_TENANT_ID.
+      - name: Azure login (Entra ID, for Marketplace)
+        if: vars.AZURE_CLIENT_ID != ''
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Publish to Visual Studio Marketplace
+        env:
+          HAS_AZURE: ${{ vars.AZURE_CLIENT_ID != '' }}
+        run: |
+          if [[ "$HAS_AZURE" != "true" ]]; then
+            echo "::warning::AZURE_CLIENT_ID is not set on the marketplace environment; skipping Visual Studio Marketplace publish."
+            exit 0
+          fi
+          npx --yes @vscode/vsce@4 publish --azure-credential --packagePath "$VSIX"
+
+      - name: Publish to Open VSX
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [[ -z "$OVSX_PAT" ]]; then
+            echo "::warning::OVSX_PAT secret is not set; skipping Open VSX publish."
+            exit 0
+          fi
+          npx --yes ovsx publish "$VSIX" -p "$OVSX_PAT"
+
+      # This creates tag vX.Y.Z at the exact commit that was tested and packaged.
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Use this version's CHANGELOG section as the release notes, if there is one.
+          awk -v v="$VERSION" '
+            /^## / { if (found) exit; if ($2 == v || $2 == "[" v "]") { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          notes=(--generate-notes)
+          [[ -s release-notes.md ]] && notes=(--notes-file release-notes.md)
+          gh release create "v$VERSION" "$VSIX" --title "v$VERSION" --target "$GITHUB_SHA" "${notes[@]}"

@@ -1,0 +1,120 @@
+name: Bug report
+description: Chevron showed the wrong changes, the wrong content, or nothing at all.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Most "nothing showed up" reports turn out to be one of the cases in
+        the [troubleshooting list](https://github.com/MJEvansDev/chevron/blob/main/docs/usage.md) —
+        worth a quick look first.
+
+        The single most useful thing you can give us is **what git itself says** next to what
+        Chevron showed. Chevron diffs against the merge-base of the comparison branch and `HEAD`,
+        so please run this from a terminal in the repository root, replacing `<branch>` with the
+        branch (or tag / commit) you were comparing against:
+
+        ```
+        git diff --name-status $(git merge-base <branch> HEAD)
+        ```
+
+        (On Windows PowerShell: `git diff --name-status (git merge-base <branch> HEAD)`.)
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What Chevron showed
+      description: What you did, what Chevron showed (or didn't), and what you expected instead. Screenshots welcome.
+      placeholder: |
+        1. Selected `main` as the comparison branch
+        2. Opened the Compare to Branch view
+        3. `src/foo.ts` is listed as modified, but it hasn't changed
+    validations:
+      required: true
+
+  - type: input
+    id: compare-target
+    attributes:
+      label: Comparison target
+      description: The branch, tag, commit or worktree you were comparing against.
+      placeholder: origin/main
+    validations:
+      required: true
+
+  - type: textarea
+    id: git-output
+    attributes:
+      label: Output of `git diff --name-status $(git merge-base <branch> HEAD)`
+      description: Run from a terminal in the repository root. Paste the output as-is (it's fine to redact file names, but keep the status letters and line structure). If it's empty, say so.
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: editor
+    attributes:
+      label: Editor
+      options:
+        - VS Code
+        - VS Code Insiders
+        - Cursor
+        - VSCodium
+        - Windsurf
+        - Other (say which below)
+    validations:
+      required: true
+
+  - type: input
+    id: editor-version
+    attributes:
+      label: Editor version
+      description: Help → About (or `code --version`).
+      placeholder: "1.104.2"
+    validations:
+      required: true
+
+  - type: input
+    id: chevron-version
+    attributes:
+      label: Chevron version
+      description: Shown on Chevron's page in the Extensions view.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Windows
+        - Linux
+        - WSL / Remote (say which below)
+    validations:
+      required: true
+
+  - type: input
+    id: git-version
+    attributes:
+      label: git version
+      description: Output of `git --version`.
+      placeholder: git version 2.51.0
+
+  - type: checkboxes
+    id: setup
+    attributes:
+      label: Repository setup
+      description: Tick everything that applies — these are the setups most likely to behave differently.
+      options:
+        - label: The repository has other worktrees (`git worktree list` shows more than one), or I was comparing against a worktree
+        - label: The repository uses submodules, or the file is inside a submodule
+        - label: The VS Code window has more than one folder open (multi-root workspace)
+        - label: The folder open in VS Code is a subfolder of the repository, not its root
+        - label: Remote / container / WSL / SSH workspace
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Errors from Help → Toggle Developer Tools → Console, unusual git config, very large repos, file names with unusual characters, etc.

@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: npm # covers pnpm-lock.yaml
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      # Pinned deliberately: it sets the minimum VS Code API Chevron may use, which must stay in
+      # step with engines.vscode. Bump both together, by hand.
+      - dependency-name: "@types/vscode"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

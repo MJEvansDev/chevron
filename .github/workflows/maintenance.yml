@@ -1,0 +1,48 @@
+name: Maintenance status
+
+# Weekly: posts scripts/maintenance-status.mjs output to a pinned "Maintenance status" issue, and
+# @-mentions the maintainer when something needs attention (an overdue issue reply, the 90-day
+# release cadence, a dated deadline). Claude Code sessions see the same status through the
+# SessionStart hook in .claude/settings.json, and the /maintenance skill works through it.
+
+on:
+  schedule:
+    - cron: '13 7 * * 1' # Mondays 07:13 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # tags, for release cadence
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          # No pnpm install here. Without this, setup-node reads package.json's packageManager field and
+          # fails with "Unable to locate executable file: pnpm".
+          package-manager-cache: false
+      - name: Build status
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/maintenance-status.mjs --format=markdown > status.md
+      - name: Update the status issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create maintenance-status --color 5319e7 --description "Weekly maintenance status" 2>/dev/null || true
+          number="$(gh issue list --label maintenance-status --state open --json number --jq '.[0].number')"
+          if [[ -z "$number" ]]; then
+            number="$(gh issue create --title "Maintenance status" --label maintenance-status --body-file status.md | sed 's#.*/##')"
+          else
+            gh issue edit "$number" --body-file status.md
+          fi
+          if grep -q '^### Needs attention' status.md; then
+            { echo "@MattJEvansDev: this week's maintenance items need attention. Run \`/maintenance\` in Claude Code."; echo; sed -n '/^### Needs attention/,/^### Status/p' status.md | sed '$d'; } > ping.md
+            gh issue comment "$number" --body-file ping.md
+          fi

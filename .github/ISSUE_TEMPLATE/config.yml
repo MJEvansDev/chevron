@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/MJEvansDev/chevron/security/advisories/new
+    about: Please report security issues privately, not as a public issue.
+  - name: Usage and troubleshooting guide
+    url: https://github.com/MJEvansDev/chevron/blob/main/docs/usage.md
+    about: What each command does, where results appear, and the common "nothing showed up" causes.

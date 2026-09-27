@@ -1,0 +1,43 @@
+name: CI
+
+# Every push and PR runs on the cheap Ubuntu runner only. Windows and macOS run in release.yml,
+# before a release is published, or on demand: Actions → Release → Run workflow with
+# publish unticked.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      os: ubuntu-latest
+
+  # The exact .vsix for this commit, for manual QA.
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run vsix
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chevron-vsix
+          path: chevron-*.vsix
+          if-no-files-found: error
+          retention-days: 30

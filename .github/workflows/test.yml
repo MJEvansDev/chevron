@@ -1,0 +1,39 @@
+name: Test
+
+# Reusable build-and-test job, called by ci.yml (Ubuntu only, every push/PR) and release.yml
+# (Ubuntu, Windows and macOS, before anything is published). Keep the steps here so both stay
+# identical.
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: Runner label, e.g. ubuntu-latest, windows-latest, macos-latest.
+        type: string
+        default: ubuntu-latest
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check-types
+      - run: pnpm run lint
+      - run: pnpm run test:unit
+      - run: pnpm run compile
+      - name: Integration tests (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a pnpm run test:integration
+      - name: Integration tests
+        if: runner.os != 'Linux'
+        run: pnpm run test:integration

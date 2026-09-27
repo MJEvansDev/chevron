@@ -1,0 +1,341 @@
+{
+  "name": "chevron",
+  "displayName": "Chevron — Compare With Branch, IntelliJ-style",
+  "description": "IntelliJ's Compare With Branch for VS Code: diff your working tree against any branch, tag or commit, and take changes across hunk by hunk. No account, no telemetry.",
+  "version": "1.0.0",
+  "publisher": "MJEvansDev",
+  "license": "MIT",
+  "icon": "resources/icon.png",
+  "galleryBanner": {
+    "color": "#4338CA",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MJEvansDev/chevron.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MJEvansDev/chevron/issues"
+  },
+  "homepage": "https://github.com/MJEvansDev/chevron#readme",
+  "packageManager": "pnpm@10.14.0",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "keywords": [
+    "intellij",
+    "jetbrains",
+    "compare with branch",
+    "idea",
+    "webstorm",
+    "pycharm",
+    "rider",
+    "branch diff",
+    "git diff",
+    "merge base",
+    "three-dot diff",
+    "code review",
+    "changed files",
+    "git blame",
+    "cursor"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "chevron.selectCompareBranch",
+        "title": "Chevron: Select Branch to Compare"
+      },
+      {
+        "command": "chevron.diffCurrentFile",
+        "title": "Chevron: Diff Current File Against Branch",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "chevron.showChangedFilesTree",
+        "title": "Chevron: Show Changed Files (Project)"
+      },
+      {
+        "command": "chevron.refreshChangedFiles",
+        "title": "Chevron: Refresh Changed Files",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "chevron.copyRelativePath",
+        "title": "Chevron: Copy Relative Path"
+      },
+      {
+        "command": "chevron.revealInExplorer",
+        "title": "Chevron: Reveal in Explorer"
+      },
+      {
+        "command": "chevron.toggleBlameAnnotations",
+        "title": "Chevron: Toggle Blame Annotations"
+      },
+      {
+        "command": "chevron.takeHunkFromBranch",
+        "title": "Chevron: Take Change Under Cursor from Branch"
+      },
+      {
+        "command": "chevron.nextChange",
+        "title": "Chevron: Go to Next Change (Across Files)"
+      },
+      {
+        "command": "chevron.previousChange",
+        "title": "Chevron: Go to Previous Change (Across Files)"
+      },
+      {
+        "command": "chevron.selectRepository",
+        "title": "Chevron: Select Repository",
+        "icon": "$(repo)"
+      },
+      {
+        "command": "chevron.viewAsList",
+        "title": "Chevron: View as List",
+        "icon": "$(list-flat)"
+      },
+      {
+        "command": "chevron.viewAsTree",
+        "title": "Chevron: View as Tree",
+        "icon": "$(list-tree)"
+      }
+    ],
+    "configuration": {
+      "title": "Chevron",
+      "properties": {
+        "chevron.defaultComparisonBranch": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "markdownDescription": "Ref to compare against automatically when a repository has no comparison selected yet (a branch, tag or any ref git resolves). Leave empty to use what `origin/HEAD` points at, then `main`, then `master`. Never the checked-out branch itself — that becomes `origin/<branch>` instead. Only applies while `#chevron.autoSelectComparisonBranch#` is on."
+        },
+        "chevron.autoSelectComparisonBranch": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Automatically select a comparison branch (see `#chevron.defaultComparisonBranch#`) for a repository that has none, instead of waiting for you to pick one."
+        },
+        "chevron.blame.annotationsEnabledByDefault": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Show blame annotations beside changed lines when VS Code starts. `Chevron: Toggle Blame Annotations` still switches them for the session."
+        },
+        "chevron.blame.dateFormat": {
+          "type": "string",
+          "enum": [
+            "relative",
+            "absolute"
+          ],
+          "enumDescriptions": [
+            "How long ago, e.g. \"3mo ago\".",
+            "The author date, e.g. \"2026-06-14\"."
+          ],
+          "default": "relative",
+          "description": "Date style in blame annotations. The blame hover always shows the full date and time."
+        },
+        "chevron.showUntrackedFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include untracked (never added) files in the changed-files view and in change navigation."
+        },
+        "chevron.treeLayout": {
+          "type": "string",
+          "enum": [
+            "tree",
+            "list"
+          ],
+          "enumDescriptions": [
+            "Files nested under their folders.",
+            "A flat list of files, each with its folder alongside."
+          ],
+          "default": "tree",
+          "scope": "window",
+          "description": "How the changed-files view lays out files."
+        },
+        "chevron.takeFromBranch.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show `← Take from <branch>` CodeLenses above each change in Chevron's diffs."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "chevron",
+          "title": "Chevron",
+          "icon": "resources/chevron-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "chevron": [
+        {
+          "id": "chevron.changedFilesView",
+          "name": "Compare to Branch"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "chevron.changedFilesView",
+        "when": "!chevron.hasComparisonBranch",
+        "contents": "No comparison branch selected.\n[Select Branch](command:chevron.selectCompareBranch)"
+      },
+      {
+        "view": "chevron.changedFilesView",
+        "when": "!chevron.hasComparisonBranch && chevron.multipleRepositories",
+        "contents": "Several repositories are open — the view shows the one named above.\n[Select Repository](command:chevron.selectRepository)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "chevron.selectRepository",
+          "when": "view == chevron.changedFilesView && chevron.multipleRepositories",
+          "group": "navigation@1"
+        },
+        {
+          "command": "chevron.viewAsList",
+          "when": "view == chevron.changedFilesView && config.chevron.treeLayout != list",
+          "group": "navigation@2"
+        },
+        {
+          "command": "chevron.viewAsTree",
+          "when": "view == chevron.changedFilesView && config.chevron.treeLayout == list",
+          "group": "navigation@2"
+        },
+        {
+          "command": "chevron.refreshChangedFiles",
+          "when": "view == chevron.changedFilesView",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "chevron.copyRelativePath",
+          "when": "view == chevron.changedFilesView && viewItem == chevron.file",
+          "group": "1_actions"
+        },
+        {
+          "command": "chevron.revealInExplorer",
+          "when": "view == chevron.changedFilesView && viewItem == chevron.file",
+          "group": "1_actions"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "chevron.diffCurrentFile",
+          "when": "resourceScheme == file",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "chevron.copyRelativePath",
+          "when": "false"
+        },
+        {
+          "command": "chevron.revealInExplorer",
+          "when": "false"
+        },
+        {
+          "command": "chevron.diffCurrentFile",
+          "when": "resourceScheme == file"
+        },
+        {
+          "command": "chevron.takeHunkFromBranch",
+          "when": "chevron.hasComparisonBranch && resourceScheme == file"
+        },
+        {
+          "command": "chevron.nextChange",
+          "when": "chevron.hasComparisonBranch"
+        },
+        {
+          "command": "chevron.previousChange",
+          "when": "chevron.hasComparisonBranch"
+        },
+        {
+          "command": "chevron.selectRepository",
+          "when": "chevron.multipleRepositories"
+        },
+        {
+          "command": "chevron.viewAsList",
+          "when": "config.chevron.treeLayout != list"
+        },
+        {
+          "command": "chevron.viewAsTree",
+          "when": "config.chevron.treeLayout == list"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "chevron.diffCurrentFile",
+        "key": "ctrl+k shift+d",
+        "mac": "cmd+k shift+d",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "chevron.toggleBlameAnnotations",
+        "key": "ctrl+k shift+b",
+        "mac": "cmd+k shift+b",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "chevron.nextChange",
+        "key": "alt+f7",
+        "when": "chevron.hasComparisonBranch && editorTextFocus"
+      },
+      {
+        "command": "chevron.previousChange",
+        "key": "shift+alt+f7",
+        "when": "chevron.hasComparisonBranch && editorTextFocus"
+      },
+      {
+        "command": "chevron.takeHunkFromBranch",
+        "key": "ctrl+k shift+t",
+        "mac": "cmd+k shift+t",
+        "when": "chevron.hasComparisonBranch && editorTextFocus && !editorReadonly && resourceScheme == file"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "node esbuild.js",
+    "compile-tests": "tsc -p tsconfig.test.json",
+    "watch": "node esbuild.js --watch",
+    "package": "node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src test",
+    "test:unit": "vitest run",
+    "test:integration": "pnpm run compile-tests && node test/setup/buildFixtureRepo.mjs && vscode-test",
+    "pretest": "pnpm run check-types && pnpm run compile && pnpm run lint",
+    "test": "pnpm run pretest && pnpm run test:unit && pnpm run test:integration",
+    "vsix": "pnpm run package && pnpm dlx @vscode/vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.6.2",
+    "@types/vscode": "1.90.0",
+    "@typescript-eslint/eslint-plugin": "^8.70.1",
+    "@typescript-eslint/parser": "^8.70.1",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.11.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@vscode/vsce-sign"
+    ]
+  }
+}

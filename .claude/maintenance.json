@@ -1,0 +1,12 @@
+{
+  "repo": "MJEvansDev/chevron",
+  "maintainers": ["MattJEvansDev"],
+  "issueResponseDays": 7,
+  "releaseCadenceDays": 90,
+  "warnWithinDays": 21,
+  "deadlines": [],
+  "successMarkers": [
+    { "daysAfterLaunch": 90, "installs": 500, "label": "beaten most of the niche" },
+    { "daysAfterLaunch": 365, "installs": 2500, "label": "taken the shelf" }
+  ]
+}
